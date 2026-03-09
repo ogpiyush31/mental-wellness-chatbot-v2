@@ -3,25 +3,35 @@ import pickle
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-
+# ---------------------------------
+# Load embedding model
+# ---------------------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-
+# ---------------------------------
+# Load FAISS index
+# ---------------------------------
 index = faiss.read_index("mental_index.faiss")
 
-
+# ---------------------------------
+# Load metadata
+# ---------------------------------
 with open("metadata.pkl", "rb") as f:
     metadata = pickle.load(f)
 
-
+# ---------------------------------
+# Conversation state
+# ---------------------------------
 current_node = None
 followup_index = 0
 
-print("\n Mental Wellness Chatbot")
+print("\n🧠 Mental Wellness Chatbot")
 print("Type 'exit' to stop\n")
 
 
-
+# ---------------------------------
+# Detect new question
+# ---------------------------------
 def is_new_question(text):
 
     text = text.lower()
@@ -47,7 +57,9 @@ def is_new_question(text):
     return False
 
 
-
+# ---------------------------------
+# Chat loop
+# ---------------------------------
 while True:
 
     user_input = input("You: ")
@@ -55,7 +67,9 @@ while True:
     if user_input.lower() == "exit":
         break
 
-    
+    # ---------------------------------
+    # Detect topic change or new query
+    # ---------------------------------
     if current_node is None or is_new_question(user_input):
 
         query_vector = model.encode([user_input])
@@ -77,7 +91,9 @@ while True:
 
         continue
 
-   
+    # ---------------------------------
+    # Handle follow-ups
+    # ---------------------------------
     followups = current_node.get("followups", [])
 
     if followup_index < len(followups):
