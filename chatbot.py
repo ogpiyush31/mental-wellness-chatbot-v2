@@ -6,25 +6,49 @@ from sentence_transformers import SentenceTransformer
 # Load model
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
+
 # Load dataset
 with open("mental_awareness_60_trees_kb.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
+
 # Keep only ROOT nodes
 roots = [node for node in data if node.get("type") == "root"]
+
 
 # Prepare embeddings from stored vectors
 root_vectors = np.array([node["vector"] for node in roots])
 
 
+# 🚨 Distress keyword detection
+def detect_distress(text):
+
+    distress_keywords = [
+        "can't handle","hopeless","crying","suicidal","hurt myself",
+        "depressed","anxious","can't stop crying","losing control",
+        "breaking down","self harm","cut myself","want to die",
+        "kill myself","end my life","no way out","i give up",
+        "i can't go on","nothing will get better","suicide","worthless","alone"
+    ]
+
+    text = text.lower()
+
+    for word in distress_keywords:
+        if word in text:
+            return True
+
+    return False
+
+
 def find_best_root(user_input):
+
     query_vec = model.encode(user_input)
 
     similarities = np.dot(root_vectors, query_vec)
 
     best_index = np.argmax(similarities)
 
-    if similarities[best_index] > 0.35:   # threshold
+    if similarities[best_index] > 0.35:
         return roots[best_index]
 
     return None
@@ -45,6 +69,19 @@ while True:
         print("Bot: Take care. I'm here whenever you want to talk.")
         break
 
+
+    # 🚨 Distress detection FIRST
+    if detect_distress(user_input):
+
+        print("\nBot: It sounds like you're going through something really difficult.")
+        print("You don't have to handle this alone.")
+        print("📞 Please contact a support agent at: +91-9876543210\n")
+
+        current_tree = None
+        followup_index = 0
+        continue
+
+
     # 🔎 Always check if this is a new root trigger
     new_tree = find_best_root(user_input)
 
@@ -58,6 +95,7 @@ while True:
             print("\nBot:", current_tree["followups"][0]["question"])
 
         continue
+
 
     # 🧠 If already in conversation → followup logic
     if current_tree:
