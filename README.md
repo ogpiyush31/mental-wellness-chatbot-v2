@@ -1,129 +1,159 @@
-# 🧠 Mental Wellness RAG Chatbot
+AI Mental Wellness Chatbot
 
-A conversational AI chatbot designed to provide supportive responses for mental wellness discussions.
-The system uses **Retrieval-Augmented Generation (RAG)** with **FAISS vector search** and a **conversation tree knowledge base** to retrieve relevant responses.
+An AI-powered Mental Wellness Chatbot built using RAG (Retrieval Augmented Generation), Sentence Transformers, Groq LLM, and MariaDB.
+The chatbot provides supportive mental health conversations, detects distress signals, and escalates to a human agent when necessary.
 
-This project demonstrates how structured mental wellness conversation trees can be combined with semantic search to build an intelligent chatbot.
+Features
 
----
+User Registration & Login system
 
-# 🚀 Features
+Secure password hashing using bcrypt
 
-* Semantic search using **FAISS vector database**
-* **Sentence Transformers embeddings**
-* Structured **conversation tree knowledge base**
-* Context-aware **follow-up questions**
-* Automatic **topic switching detection**
-* Simple command-line chatbot interface
+RAG-based responses using Sentence Transformers
 
----
+Groq LLM integration for intelligent responses
 
-# 🏗️ Project Architecture
+Distress detection system
 
-User Input
-↓
-Sentence Embedding (SentenceTransformers)
-↓
-FAISS Vector Search
-↓
-Retrieve Relevant Conversation Node
-↓
-Return Response + Follow-up Questions
-↓
-Continue Conversation Flow
+Automatic chat summary generation
 
----
+MariaDB database storage
 
-# 📂 Project Structure
+Secure configuration using .env environment variables
 
-```
-mental-wellness-rag
+Agent escalation when bot confidence is low
+
+Tech Stack
+
+Backend
+
+Python
+
+Sentence Transformers
+
+LangChain
+
+Groq API
+
+Database
+
+MariaDB
+
+Machine Learning
+
+Embedding Model: all-MiniLM-L6-v2
+
+RAG Retrieval using vector similarity
+
+Security
+
+bcrypt password hashing
+
+Environment variable configuration
+
+Project Architecture
+User
+  │
+  ├── Register / Login
+  │
+  ├── Chat with AI
+  │       │
+  │       ├── Distress Detection
+  │       ├── RAG Retrieval
+  │       └── Groq LLM Response
+  │
+  └── Conversation Summary
+          │
+          └── Stored in MariaDB
+Project Structure
+mental-wellness-chatbot
 │
-├── chatbot.py                         # Main chatbot program
-├── build_faiss.py                     # Builds FAISS vector database
-│
-├── mental_awareness_60_trees_kb.json  # Knowledge base with embeddings
-├── mental_awareness_chatbot_trees.md  # Original conversation trees
-│
-├── mental_index.faiss                 # FAISS vector index
-├── metadata.pkl                       # Metadata for retrieved nodes
-```
+├── chatbot.py              # Main chatbot logic
+├── auth_db.py              # Authentication & database operations
+├── build_faiss.py          # FAISS index creation
+├── mental_awareness_60_trees_kb.json
+├── mental_index.faiss
+├── metadata.pkl
+├── .env                    # API keys & DB credentials
+├── .gitignore
+└── README.md
+Setup Instructions
+1 Install dependencies
+pip install -r requirements.txt
 
----
+or manually:
 
-# ⚙️ Installation
+pip install sentence-transformers
+pip install langchain-groq
+pip install mysql-connector-python
+pip install bcrypt
+pip install python-dotenv
+2 Configure Environment Variables
 
-Clone the repository
+Create a .env file:
 
-```
-git clone https://github.com/ogpiyush31/weaviate_rag.git
-cd weaviate_rag
-```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=mental_health_db
+DB_PORT=3307
 
-Create virtual environment
+GROQ_API_KEY=your_groq_api_key
+3 Setup Database
 
-```
-python -m venv venv
-```
+Create database and tables:
 
-Activate environment
+CREATE DATABASE mental_health_db;
 
-Windows:
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) UNIQUE,
+    password VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-```
-venv\Scripts\activate
-```
-
-Install dependencies
-
-```
-pip install faiss-cpu sentence-transformers numpy
-```
-
----
-
-# ▶️ Running the Chatbot
-
-Run the chatbot using:
-
-```
+CREATE TABLE chat_summaries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    summary TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+4 Run the Chatbot
 python chatbot.py
-```
+Example Usage
+🧠 Mental Wellness Chatbot
 
-Example interaction:
+1. Register
+2. Login
 
-```
-You: why do small problems feel big?
+Choose option: 2
 
-Bot: When stress levels are high the brain may magnify small issues because it is trying to prepare for possible threats.
+Username: user@gmail.com
+Password: ********
 
-Bot: What situations trigger this feeling?
-```
+Login successful
 
----
+You: I feel stressed about work
+Bot: It sounds like work pressure is affecting you. What part of your job feels most stressful?
+Database Example
+Users Table
+id	username
+1	user@gmail.com
+Chat Summary Table
+id	user_id	summary
+1	1	User discussed work stress and anxiety.
+Future Improvements
 
-# 🧠 Knowledge Base
+Web interface using React
 
-The chatbot uses a structured **conversation tree dataset** containing:
+FastAPI backend API
 
-* Root mental health questions
-* Helpful responses
-* Follow-up questions
-* Trigger-based conversational branches
+Real-time chat UI
 
-This allows the chatbot to guide conversations in a supportive and structured way.
+Chat history per session
 
----
+Emotion detection from voice/text
 
-# 🛠️ Technologies Used
 
-* Python
-* FAISS (Facebook AI Similarity Search)
-* Sentence Transformers
-* NumPy
-* JSON Knowledge Base
-
----
-
-GitHub:
+GitHub
 https://github.com/ogpiyush31
