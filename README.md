@@ -1,94 +1,93 @@
-AI Mental Wellness Chatbot
+🧠 AI Mental Wellness Chatbot
+RAG + Groq LLM + MariaDB
 
-An AI-powered Mental Wellness Chatbot built using RAG (Retrieval Augmented Generation), Sentence Transformers, Groq LLM, and MariaDB.
-The chatbot provides supportive mental health conversations, detects distress signals, and escalates to a human agent when necessary.
+An AI-powered Mental Wellness Chatbot that provides supportive conversations, detects distress signals, and stores conversation summaries for each user.
 
-Features
+The system combines Retrieval-Augmented Generation (RAG) with LLM responses to deliver contextual and empathetic support.
 
-User Registration & Login system
+🚀 Features
+
+✨ User Authentication
+
+Register & Login system
 
 Secure password hashing using bcrypt
 
-RAG-based responses using Sentence Transformers
+🧠 AI Chatbot
 
-Groq LLM integration for intelligent responses
+Retrieval-Augmented Generation (RAG)
 
-Distress detection system
+Sentence Transformers embeddings
 
-Automatic chat summary generation
+Groq LLM integration
 
-MariaDB database storage
+⚠ Distress Detection
 
-Secure configuration using .env environment variables
+Detects crisis keywords
 
-Agent escalation when bot confidence is low
+Escalates conversation to human support
 
-Tech Stack
+💾 Database Integration
 
-Backend
+Stores users
 
-Python
+Stores conversation summaries
 
-Sentence Transformers
+MariaDB relational database
 
-LangChain
+🔐 Security
 
-Groq API
+.env environment variable configuration
 
-Database
+Password hashing
 
-MariaDB
+API keys hidden from repository
 
-Machine Learning
-
-Embedding Model: all-MiniLM-L6-v2
-
-RAG Retrieval using vector similarity
-
-Security
-
-bcrypt password hashing
-
-Environment variable configuration
-
-Project Architecture
+🏗 System Architecture
 User
   │
   ├── Register / Login
   │
   ├── Chat with AI
-  │       │
-  │       ├── Distress Detection
-  │       ├── RAG Retrieval
-  │       └── Groq LLM Response
+  │      │
+  │      ├── Distress Detection
+  │      ├── RAG Retrieval
+  │      └── Groq LLM Response
   │
   └── Conversation Summary
           │
           └── Stored in MariaDB
-Project Structure
+📂 Project Structure
 mental-wellness-chatbot
 │
 ├── chatbot.py              # Main chatbot logic
-├── auth_db.py              # Authentication & database operations
-├── build_faiss.py          # FAISS index creation
+├── auth_db.py              # Authentication & DB operations
+├── build_faiss.py          # Vector index builder
 ├── mental_awareness_60_trees_kb.json
 ├── mental_index.faiss
 ├── metadata.pkl
-├── .env                    # API keys & DB credentials
+├── .env
 ├── .gitignore
 └── README.md
-Setup Instructions
-1 Install dependencies
-pip install -r requirements.txt
-
-or manually:
-
+🛠 Tech Stack
+Category	Technology
+Language	Python
+LLM	Groq (Llama 3)
+Embeddings	Sentence Transformers
+Database	MariaDB
+Security	bcrypt
+Vector Search	FAISS
+⚙️ Installation
+1️⃣ Clone the Repository
+git clone https://github.com/ogpiyush31/mental-wellness-chatbot-v2.git
+cd mental-wellness-chatbot-v2
+2️⃣ Install Dependencies
 pip install sentence-transformers
 pip install langchain-groq
 pip install mysql-connector-python
 pip install bcrypt
 pip install python-dotenv
-2 Configure Environment Variables
+🔑 Environment Variables
 
 Create a .env file:
 
@@ -99,10 +98,7 @@ DB_NAME=mental_health_db
 DB_PORT=3307
 
 GROQ_API_KEY=your_groq_api_key
-3 Setup Database
-
-Create database and tables:
-
+🗄 Database Setup
 CREATE DATABASE mental_health_db;
 
 CREATE TABLE users (
@@ -118,9 +114,9 @@ CREATE TABLE chat_summaries (
     summary TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-4 Run the Chatbot
+▶ Run the Chatbot
 python chatbot.py
-Example Usage
+💬 Example Conversation
 🧠 Mental Wellness Chatbot
 
 1. Register
@@ -129,31 +125,27 @@ Example Usage
 Choose option: 2
 
 Username: user@gmail.com
-Password: ********
+Password: ******
 
 Login successful
 
 You: I feel stressed about work
 Bot: It sounds like work pressure is affecting you. What part of your job feels most stressful?
-Database Example
+📊 Database Example
 Users Table
 id	username
 1	user@gmail.com
-Chat Summary Table
+Chat Summaries
 id	user_id	summary
-1	1	User discussed work stress and anxiety.
-Future Improvements
+1	1	User discussed stress related to work.
+🔮 Future Improvements
 
-Web interface using React
+Web interface with React
 
-FastAPI backend API
+Backend API using FastAPI
 
 Real-time chat UI
 
-Chat history per session
+Conversation history per user
 
-Emotion detection from voice/text
-
-
-GitHub
-https://github.com/ogpiyush31
+Emotion detection using NLP
