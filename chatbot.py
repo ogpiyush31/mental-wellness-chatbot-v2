@@ -1,9 +1,12 @@
 import json
 import numpy as np
+import os
 from sentence_transformers import SentenceTransformer
+from langchain_groq import ChatGroq
+from auth_db import register_user, login_user, save_summary, generate_summary
 
 
-# Load model
+# Load embedding model
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
@@ -16,11 +19,20 @@ with open("mental_awareness_60_trees_kb.json", "r", encoding="utf-8") as f:
 roots = [node for node in data if node.get("type") == "root"]
 
 
-# Prepare embeddings from stored vectors
+# Root embeddings
 root_vectors = np.array([node["vector"] for node in roots])
 
 
-# 🚨 Distress keyword detection
+# Groq LLM
+llm = ChatGroq(
+    temperature=0.3,
+    max_tokens=120,
+    groq_api_key=os.getenv("GROQ_API_KEY"),
+    model_name="llama-3.3-70b-versatile"
+)
+
+
+# Distress detection
 def detect_distress(text):
 
     distress_keywords = [
@@ -28,7 +40,8 @@ def detect_distress(text):
         "depressed","anxious","can't stop crying","losing control",
         "breaking down","self harm","cut myself","want to die",
         "kill myself","end my life","no way out","i give up",
-        "i can't go on","nothing will get better","suicide","worthless","alone"
+        "i can't go on","nothing will get better","suicide",
+        "worthless","alone"
     ]
 
     text = text.lower()
@@ -40,6 +53,7 @@ def detect_distress(text):
     return False
 
 
+# Find best root
 def find_best_root(user_input):
 
     query_vec = model.encode(user_input)
@@ -48,70 +62,229 @@ def find_best_root(user_input):
 
     best_index = np.argmax(similarities)
 
-    if similarities[best_index] > 0.35:
-        return roots[best_index]
+    best_score = similarities[best_index]
 
-    return None
+    return roots[best_index], best_score
+
+
+# Groq short response
+def groq_answer(question):
+
+    prompt = f"""
+You are a mental wellness chatbot.
+
+Rules:
+- Respond in maximum 2 sentences
+- Be supportive and empathetic
+- Keep answers short
+
+User message:
+{question}
+"""
+
+    response = llm.invoke(prompt)
+
+    return response.content
 
 
 print("\n🧠 Mental Wellness Chatbot")
-print("Type 'exit' to stop\n")
+
+
+# STEP 9 — LOGIN / REGISTER
+print("1. Register")
+print("2. Login")
+
+choice = input("Choose option: ")
+
+if choice == "1" or choice == "register":
+    register_user()
+
+user_id = login_user()
+
+print("\nType 'exit' to stop\n")
+
 
 current_tree = None
 followup_index = 0
+conversation_history = []
 
 
 while True:
 
     user_input = input("You: ")
 
+    conversation_history.append("User: " + user_input)
+
+    print("DEBUG user_id:", user_id)
+    # EXIT → SAVE SUMMARY
     if user_input.lower() == "exit":
-        print("Bot: Take care. I'm here whenever you want to talk.")
+
+        summary = generate_summary(llm, conversation_history)
+
+        save_summary(user_id, summary)
+
+        print("Bot: Chat summary saved. Take care!")
+
         break
 
 
-    # 🚨 Distress detection FIRST
+    # Distress detection
     if detect_distress(user_input):
 
-        print("\nBot: It sounds like you're going through something really difficult.")
-        print("You don't have to handle this alone.")
-        print("📞 Please contact a support agent at: +91 884-0209873\n")
+        bot_msg = "It sounds like you're going through something really difficult. Please contact support: +91 8840209873"
+
+        print("\nBot:", bot_msg)
+
+        conversation_history.append("Bot: " + bot_msg)
 
         current_tree = None
         followup_index = 0
         continue
 
 
-    # 🔎 Always check if this is a new root trigger
-    new_tree = find_best_root(user_input)
+    # FOLLOW-UP HANDLING
+    if current_tree:
 
-    if new_tree:
-        current_tree = new_tree
+        word_count = len(user_input.split())
+
+        # Short answer → continue follow-up
+        if word_count < 3:
+
+            followups = current_tree.get("followups", [])
+
+            bot_msg = followups[followup_index]["answer"]
+
+            print("\nBot:", bot_msg)
+
+            conversation_history.append("Bot: " + bot_msg)
+
+            followup_index += 1
+
+            if followup_index < len(followups):
+
+                bot_msg = followups[followup_index]["question"]
+
+                print("\nBot:", bot_msg)
+
+                conversation_history.append("Bot: " + bot_msg)
+
+            else:
+
+                bot_msg = "Thank you for sharing. If you'd like to talk about something else, feel free to tell me."
+
+                print("\nBot:", bot_msg)
+
+                conversation_history.append("Bot: " + bot_msg)
+
+                current_tree = None
+                followup_index = 0
+
+            continue
+
+
+        # Longer message → similarity routing
+        best_root, followup_score = find_best_root(user_input)
+
+
+        # RAG
+        if followup_score >= 0.6:
+
+            current_tree = best_root
+            followup_index = 0
+
+            bot_msg = current_tree["response"]
+
+            print("\nBot:", bot_msg)
+
+            conversation_history.append("Bot: " + bot_msg)
+
+            if current_tree["followups"]:
+
+                bot_msg = current_tree["followups"][0]["question"]
+
+                print("\nBot:", bot_msg)
+
+                conversation_history.append("Bot: " + bot_msg)
+
+            continue
+
+
+        # GROQ
+        elif 0.3 <= followup_score < 0.6:
+
+            response = groq_answer(user_input)
+
+            print("\nBot:", response)
+
+            conversation_history.append("Bot: " + response)
+
+            current_tree = None
+            followup_index = 0
+
+            continue
+
+
+        # AGENT
+        else:
+
+            bot_msg = "I'm not able to help with this question. Please contact support: +91 8840209873"
+
+            print("\nBot:", bot_msg)
+
+            conversation_history.append("Bot: " + bot_msg)
+
+            current_tree = None
+            followup_index = 0
+
+            continue
+
+
+    # NORMAL QUERY ROUTING
+    best_root, score = find_best_root(user_input)
+
+
+    # RAG
+    if score > 0.6:
+
+        current_tree = best_root
         followup_index = 0
 
-        print("\nBot:", current_tree["response"])
+        bot_msg = current_tree["response"]
+
+        print("\nBot:", bot_msg)
+
+        conversation_history.append("Bot: " + bot_msg)
 
         if current_tree["followups"]:
-            print("\nBot:", current_tree["followups"][0]["question"])
+
+            bot_msg = current_tree["followups"][0]["question"]
+
+            print("\nBot:", bot_msg)
+
+            conversation_history.append("Bot: " + bot_msg)
 
         continue
 
 
-    # 🧠 If already in conversation → followup logic
-    if current_tree:
+    # GROQ
+    elif 0.3 <= score <= 0.6:
 
-        followups = current_tree["followups"]
+        response = groq_answer(user_input)
 
-        print("\nBot:", followups[followup_index]["answer"])
+        print("\nBot:", response)
 
-        followup_index += 1
+        conversation_history.append("Bot: " + response)
 
-        if followup_index < len(followups):
-            print("\nBot:", followups[followup_index]["question"])
-        else:
-            print("\nBot: Thank you for sharing. If you'd like, you can tell me about another concern.\n")
-            current_tree = None
-            followup_index = 0
+        continue
 
+
+    # AGENT
     else:
-        print("Bot: I'm here to listen. Could you tell me more?")
+
+        bot_msg = "I'm not confident about this question. Please contact support: +91 8840209873"
+
+        print("\nBot:", bot_msg)
+
+        conversation_history.append("Bot: " + bot_msg)
+
+        continue
